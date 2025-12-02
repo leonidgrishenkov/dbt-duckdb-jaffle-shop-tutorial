@@ -9,4 +9,5 @@ logs/
 venv/
 env/
 **/*.duckdb
+**/*.duck
 **/*.duckdb.wal
