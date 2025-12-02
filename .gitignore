@@ -11,3 +11,4 @@ env/
 **/*.duckdb
 **/*.duck
 **/*.duckdb.wal
+jaffle-data/
