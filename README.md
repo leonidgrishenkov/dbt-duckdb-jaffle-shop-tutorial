@@ -118,6 +118,21 @@ Invokes a macro from `macros/` directly, outside of a model. Useful for one-off
 maintenance tasks (granting permissions, custom SQL) driven by dbt's Jinja
 context.
 
+### `uv run dbt parse`
+
+```sh
+uv run dbt parse
+uv run dbt parse --no-partial-parse   # re-parse everything, ignore the cache
+```
+
+Reads and validates the **whole project** — every `.sql`, `.yml`, and `.md`
+file — resolves `ref()`/`source()`/configs, builds the DAG, and writes
+`target/manifest.json`, all **without touching the database or building
+anything**. It's the metadata step every other command runs first; on its own
+it's a fast sanity check that the project parses cleanly and surfaces config
+errors and deprecation warnings. Add `--no-partial-parse` to re-parse from
+scratch (the cache can skip unchanged files and hide warnings).
+
 ### `uv run dbt compile`
 
 ```sh
