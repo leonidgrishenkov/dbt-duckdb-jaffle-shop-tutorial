@@ -12,3 +12,4 @@ env/
 **/*.duck
 **/*.duckdb.wal
 jaffle-data/
+seeds/*.csv
