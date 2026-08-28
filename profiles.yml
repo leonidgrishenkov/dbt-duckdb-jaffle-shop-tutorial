@@ -1,7 +1,39 @@
+# profiles.yml — the connection config. dbt_project.yml says WHAT to build;
+# this file says WHERE to build it (which database, as which user).
+#
+# Lookup order dbt uses to find this file:
+#   1. --profiles-dir flag   2. DBT_PROFILES_DIR env var
+#   3. the project directory (this file — supported since dbt-core 1.5)
+#   4. ~/.dbt/profiles.yml   <- the usual home for it
+# Real projects keep it at ~/.dbt/ and out of git, because it normally holds
+# credentials. It's safe to commit here only because DuckDB is a local file
+# with no secrets. (The .duck file itself IS gitignored.)
+
+# Profile name. Must match `profile: 'jaffle_shop'` in dbt_project.yml —
+# that's the only thing linking the two files. Note it differs from the
+# project's `name:` (jaffle_shop_example); dbt resolves them separately.
 jaffle_shop:
+
+  # Which output below to use when no --target is passed on the CLI.
+  # The convention is `dev` here and prod selected explicitly in CI, e.g.
+  # `dbt run --target prod`.
   target: dev
+
+  # One entry per environment you can connect to. Only `dev` exists here;
+  # you'd add a sibling `prod:` block with different credentials to have two.
   outputs:
     dev:
+      # The adapter — picks the dbt-duckdb plugin (installed via pyproject.toml)
+      # and, with it, the set of keys this block is allowed to contain. A
+      # Postgres/Snowflake profile would take host/user/password/schema instead.
       type: duckdb
+
+      # The DuckDB database file, resolved relative to the working directory
+      # you run dbt from. Created on first `dbt seed`/`dbt run`. Use ":memory:"
+      # (or omit) for a throwaway in-memory DB that vanishes after each run.
       path: "jaffle_shop_example.duck"
-      threads: 8
+
+      # How many models dbt builds in parallel. It respects the DAG, so only
+      # independent nodes run together — here the 3 staging views, then the
+      # 2 marts. More threads ≠ faster past the width of your DAG.
+      threads: 2

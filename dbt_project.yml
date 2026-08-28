@@ -1,34 +1,65 @@
+# dbt_project.yml — the project manifest. Every dbt project has exactly one,
+# at the repo root. It names the project, tells dbt where to find things, and
+# supplies default configs that cascade down to models/seeds.
+
+# Internal project name. Must be a valid identifier (letters/digits/underscore).
+# It's also the key used under `models:` below to scope config to THIS project's
+# models rather than an installed package's.
 name: 'jaffle_shop_example'
 
+# Syntax version of this file. v2 is the only one dbt 1.x supports — boilerplate.
 config-version: 2
+# Your own version string. Purely informational.
 version: '0.1'
 
+# Which entry in profiles.yml holds the DB connection. Points at the
+# `jaffle_shop:` block in this repo's profiles.yml -> local DuckDB file.
+# Deliberately different from `name` above: dbt looks the two up separately.
 profile: 'jaffle_shop'
 
+# Where dbt scans for each resource type. All of these are the defaults, so the
+# block is redundant — spelled out here so the wiring is visible. Each takes a
+# LIST, so models can be split across several trees. Dirs that don't exist
+# (tests/, analysis/, macros/) are silently skipped.
 model-paths: ["models"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]
 analysis-paths: ["analysis"]
 macro-paths: ["macros"]
 
-target-path: "target"
+# Directories `dbt clean` deletes. "dbt_modules" is the pre-1.0 name for what is
+# now dbt_packages, so it's vestigial.
 clean-targets:
     - "target"
     - "dbt_modules"
     - "logs"
 
+# dbt refuses to run outside this version range (conditions are ANDed).
+# Guards the project against breaking changes in a major version bump.
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
-seeds: 
+# --- Resource configs -------------------------------------------------------
+# Keys prefixed with `+` are CONFIGS. Unprefixed keys are PATH SEGMENTS under
+# the resource directory. Configs inherit downward and the most specific path
+# wins — nesting depth decides precedence, not the order keys appear.
+# WARN: Everything here is a DEFAULT: an in-file {{ config(...) }} block or a
+# `config:` entry in schema.yml overrides it.
+
+seeds:
+  # Applies to every seed (the 3 CSVs in seeds/): bronze nodes in the docs DAG.
+  # Cosmetic only.
   +docs:
     node_color: '#cd7f32'
 
 models:
-  jaffle_shop_example:
-    +materialized: table
-    staging:
-      +materialized: view
+  jaffle_shop_example:      # path scope: models belonging to THIS project
+    +materialized: table    # default for everything below -> marts become
+                            # physical tables (customers.sql, orders.sql)
+    staging:                # narrower scope: models/staging/
+      +materialized: view   # override — more specific path wins, so
+                            # stg_*.sql are cheap always-fresh views
       +docs:
         node_color: 'silver'
+    # Applies to models directly under models/.
     +docs:
       node_color: 'gold'
